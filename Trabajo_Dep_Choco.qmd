@@ -1,0 +1,251 @@
+---
+title: "Trabajo grupal, Departamento: Chocó." 
+author:
+  - name: "Yamid Campo"
+  - name: "Luis Paredes"
+  - name: "Yolian Rodriguez"
+date: "2025-07-01"
+lang: es
+format:
+  pdf: 
+    prefer-html: true
+    fig-align: "center"
+    toc: true
+    number-sections: true
+    fig-cap: true
+    fontsize: 12pt
+    geometry: margin=2.5cm
+    documentclass: article
+    include-before-body: portada/portada_iam.tex
+    keep-tex: true
+    keep-md: true
+    latex-engine: pdflatex
+    citation-package: natbib
+    biblio-style: apalike
+    csl: methods-in-ecology-and-evolution.csl
+    link-citations: true
+    lof: true   
+    lot: true
+  html:
+    toc: true   
+bibliography:
+  - bib/library.bib
+  - bib/paquetes.bib
+  - bib/referencias.bib
+nocite:  | 
+  @knitr2014,@knitr2015,@rmarkdown2018,@rmarkdown2020,@R-rmarkdown,@R-knitr,@paquete_car
+---
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+library(sf)
+library(tidyverse)
+library(readxl)
+library(dplyr)
+library(tmap)
+library(dplyr)
+library(geosphere)
+```
+
+# Objetivos del trabajo
+
+Haciendo uso de bases de datos, buscaremos obtener interpretación gráfica por medio de mapas de distintas variables relacionadas a los municipios del departamento del Chocó.
+
+# Introducción
+
+A continuación, se presenta un trabajo de estadística descriptiva y análisis exploratorio de datos, donde exploraremos las variables índices de pobreza, índice de desempeño fiscal y la distancia de los municipios a la capital del departamento del Chocó, por medio de mapas gráficos que nos permite visualizar mucho más claro como es el desempeño de los distintos municipios del departamento. Se hará uso del lenguaje de programación R y tres bases de datos en total para el desarrollo del trabajo.
+
+En primer lugar tenemos, MGM_ADM_MPIO_GRAFICO, que corresponde a los datos de geometría de los municipios de los departamentos de Colombia, ResultadosIDF_Nueva_Metodologia_2023, que corresponde a los datos de Índice de Desempeño Fiscal de los municipios de Colombia y, por último, MPM_FuenteCensal_2018 que corresponde a los datos de Índice de pobreza Multidimensional Municipal. Buscamos que se pueda observar de manera gráfica algún comportamiento particular por medio de estas variables.
+
+```{r echo = FALSE, message = FALSE, warning = FALSE, fig.cap="Mapa De Municipios del Departamento del Chocó"}
+# Código filtrado de municipios del departamento del Chocó
+municipios <- st_read("MGN_ADM_MPIO_GRAFICO.shp", quiet = TRUE)
+municipios_choco <- municipios %>% filter(dpto_ccdgo == "27")
+
+# Graficar
+ggplot(data = municipios_choco) +
+  geom_sf(fill = "lightblue", color = "black") +
+  labs(title = "Municipios del Chocó, Colombia") +
+  theme_minimal()
+```
+
+\newpage
+
+# Mapa De Indice de Pobreza Municipal (MPM)
+
+El índice de pobreza multidimensional total municipal: Para empezar, tuvimos que obtener la base de datos de Pobreza multidimensional Municipal en la página del DANE, desde el Geovisor de pobreza multidimensional municipal, accediendo a un mapa interactivo que desde ahí nos permitía la descarga, y obtuvimos la base de datos llamada MPM_FuenteCensal_2018, donde teníamos varios archivos, pero con el que trabajamos fue el .shp. En segundo lugar, la metodología que utilizamos para este primer mapa fue, cargar el archivo .shp con ayuda de la librería Sf, y filtrar por el departamento del Chocó para obtener los datos de los municipios de este departamento que son los que nos competen. Por último, haciendo uso de la librería Tmap, graficamos los municipios del departamento por medio de la variable MPM, que corresponde al índice de pobreza multidimensional. Por suerte, no tuvimos que hacer tratamientos a los datos, ya que el código de los municipios y sus polígonos eran correctos.
+
+```{r,  echo = FALSE, message = FALSE, warning = FALSE, fig.cap="Mapa De Indice de Pobreza"}
+# Código que filtra el Indice de Pobreza por el dep del Chocó
+
+pobreza <- st_read("MPM_FuenteCensal_2018.shp", quiet = TRUE)
+pobreza_choco <- pobreza %>% filter(DPTO_CNMBR == "CHOCÓ")
+
+# Gráfico
+tmap_mode("plot")
+
+tm_shape(pobreza_choco) +
+  tm_fill("MPM", palette = "Reds", title = "Índice de Pobreza Municipal") +
+  tm_borders() +
+  tm_layout(title = "Municipios del Chocó con IDF", legend.outside = TRUE)
+```
+
+El mapa presenta el Índice de Pobreza Multidimensional (MPM) en los municipios del departamento del Chocó, según datos del DANE (2018). Este índice refleja múltiples dimensiones de la pobreza —educación, salud, condiciones de vida, entre otras— y permite identificar no solo la incidencia de la pobreza, sino su intensidad. A partir de la visualización, se observa que la mayoría de los municipios del Chocó presentan niveles elevados de pobreza, con valores que oscilan entre el 60 % y el 100 %. Particularmente, los municipios ubicados en zonas periféricas del departamento tienden a tener índices más altos, lo que puede sugerir una correlación negativa entre accesibilidad geográfica y condiciones de vida. Estos resultados evidencian la persistencia de desigualdades territoriales profundas en la región.
+
+\newpage
+
+# Mapa De Indice de Desenpeño Fiscal (IDF)
+
+Antes de poder realizar los mapas 2 y 3, tuvimos que acceder al Geoportal de DANE para poder descargar el archivo con todos los municipios de Colombia que tiene dentro de este los polígonos que nos permite realizar los gráficos, el archivo que usamos fue Versión MGN2024-Nivel Municipio, que dentro de este lleva MGM_ADM_MPIO_GRAFICO.shp, que es el que cargaremos al R para graficar. El nombre que le pondremos a esta nueva base de datos con los datos filtrados por los municipios del departamento del Chocó será municipios_chocó.
+
+El índice de desempeño fiscal municipal: Respecto a este mapa, en primer lugar tuvimos que obtener la base de datos desde la página del Departamento Nacional de Planeación, accediendo a la dirección de descentralización y fortalecimiento fiscal, donde hay una pestaña que nos lleva a la subdirección de fortalecimiento fiscal territorial y desde ahí, acceder a desempeño fiscal, donde están los diferentes resultados para distintos años, usamos el del 2023 ya que era el más actualizado, al descargar el archivo Anexo Resultados IDF 2023, obtuvimos le archivo ResultadosIDF_Nueva_Metodologia_2023 que corresponde a un xlsx.
+
+En segundo lugar, tuvimos que hace uso de la librería readxl para cargar los datos del xlsx, filtramos todas los datos por el departamento del Chocó, cambiamos el nombre de la variable del código del municipio para que coincidan con la respectiva variable de la base de datos MGM_ADM_MPIO_GRAFICO.shp, para así hacer un Left Join que nos permite llevar la variable IDF a la base de datos municipios_chocó, para finalizar con su gráfico haciendo uso de Tmap.
+
+\newpage
+
+```{r echo = FALSE, message = FALSE, warning = FALSE, fig.cap="Mapa De Indice de Desempeño Fiscal (IDF)"}
+# Gráfico 2, Indice de desempeño fiscal por municipio
+# Join Variable IDF de bd ResultadosIDF con bd municipios_choco
+
+# Cargar la hoja 2
+datos_hoja2 <- read_excel("ResultadosIDF_Nueva_MetodologIa_2023_Act.xlsx", sheet = 2)
+dep_IDF <- datos_hoja2 %>% filter(...2 == "CHOCÓ")
+dep_IDF <- dep_IDF %>%
+  rename(mpio_cdpmp = "Dirección de Descentralización y Fortalecimiento Fiscal", IDF = "...31")
+
+municipios_choco <- municipios_choco %>%
+  left_join(dep_IDF %>% select("mpio_cdpmp", "IDF"), by = "mpio_cdpmp")
+
+# Convertir IDF a numérico y redondear a 1 decimal
+municipios_choco$IDF <- as.numeric(municipios_choco$IDF)
+municipios_choco$IDF <- round(municipios_choco$IDF, 1)
+
+# Crear variable categórica para la leyenda personalizada
+# Primero, crear una tabla ordenada por IDF
+municipios_ordenados <- municipios_choco %>%
+  st_drop_geometry() %>%
+  arrange(IDF) %>%
+  mutate(etiqueta = paste0(mpio_cnmbr, ": ", IDF))
+
+# Crear factor ordenado para mantener el orden en la leyenda
+municipios_choco$etiqueta_ordenada <- factor(
+  paste0(municipios_choco$mpio_cnmbr, ": ", municipios_choco$IDF),
+  levels = municipios_ordenados$etiqueta
+)
+
+# Gráfico de Mapa
+tmap_mode("plot")
+mapa_idf <- tm_shape(municipios_choco) +
+  tm_fill("etiqueta_ordenada", 
+          palette = "YlGnBu", 
+          title = "Municipios e IDF") +
+  tm_borders() +
+  tm_layout(title = "Municipios del Chocó con Índice de Desempeño Fiscal (IDF)",
+            legend.outside = TRUE,
+            legend.text.size = 2)
+
+tmap_arrange(mapa_idf)
+
+```
+
+El mapa corresponde al Índice de Desempeño Fiscal (IDF), obtenido a partir de datos del Departamento Nacional de Planeación (2023). Este índice mide la eficiencia financiera de los gobiernos locales, considerando variables como la capacidad de recaudo, el nivel de endeudamiento, la ejecución presupuestal y la dependencia de transferencias nacionales. El análisis espacial revela una gran heterogeneidad en el desempeño fiscal entre los municipios. Algunos municipios como Istmina, Tadó o Condoto presentan valores relativamente altos de IDF (superiores a 65 puntos), lo cual puede estar asociado a una mejor gestión administrativa o a una mayor capacidad institucional. En contraste, municipios como Bojayá, Medio Baudó o Bajo Baudó presentan desempeños fiscales muy bajos, inferiores a 30 puntos. Este contraste puede deberse a múltiples factores estructurales: bajos ingresos tributarios propios, debilidad institucional, falta de personal calificado o contextos de conflicto y exclusión histórica. La relación entre pobreza y desempeño fiscal merece especial atención, ya que en algunos casos coinciden altos niveles de pobreza con baja capacidad fiscal, lo que perpetúa un círculo de subdesarrollo territorial.
+
+\newpage
+
+# Mapa De Distancia de los Municipios.
+
+En este apartado nos interesaba mostrar la distancia que presenta cada uno de los municipios del departamento del ***Chocó*** con respecto a la capital del mismo departamento ***Quibdó***
+
+La distancia de los municipios a la capital, una vez teníamos la base de datos municipos_choco, se guardan en un objetivo los centroides de cada municipio, y seguido a esto, se calcula la distancia entre centroides de los demás municipios respecto a la capital del departamento que es Quibdó, para finalizar con su gráfico.
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+
+# Calcular centroides
+choco_centroides <- st_centroid(municipios_choco)
+
+# Crear un data.frame con coordenadas de centroides
+coords_centroides <- st_coordinates(choco_centroides)
+
+# Extraer Quibdó
+quibdo <- choco_centroides %>% filter(mpio_cnmbr == "QUIBDÓ")
+
+# Calcular distancia desde cada municipio hasta Quibdó (en km)
+choco_centroides$dist_km <- distGeo(
+  st_coordinates(quibdo),
+  st_coordinates(choco_centroides)
+) / 1000  # convertir a km
+
+# Ver tabla
+distancias <- choco_centroides %>% 
+  st_drop_geometry() %>% 
+  select(mpio_cnmbr, dist_km) %>%
+  arrange(desc(dist_km))
+
+```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE, fig.cap="Mapa De Distancia de Municipios del Chocó a la Capital del Departamento (Quibdó)"}
+# Asegúrate de tener la columna dist_km unida a municipios_choco
+distancias_df <- choco_centroides %>%
+  st_drop_geometry() %>%
+  select(mpio_cnmbr, dist_km)
+
+municipios_choco <- municipios_choco %>%
+  left_join(distancias_df, by = "mpio_cnmbr")
+
+municipios_choco$dist_km <- as.numeric(municipios_choco$dist_km)
+municipios_choco$dist_km <- round(municipios_choco$dist_km, 1)
+
+# Crear variable categórica para la leyenda personalizada
+# Primero, crear una tabla ordenada por distancia
+municipios_ordenados <- municipios_choco %>%
+  st_drop_geometry() %>%
+  arrange(dist_km) %>%
+  mutate(etiqueta = paste0(mpio_cnmbr, ": ", dist_km, " km"))
+
+# Crear factor ordenado para mantener el orden en la leyenda
+municipios_choco$etiqueta_ordenada <- factor(
+  paste0(municipios_choco$mpio_cnmbr, ": ", municipios_choco$dist_km, " km"),
+  levels = municipios_ordenados$etiqueta
+)
+
+# MAPA CORREGIDO
+tmap_mode("plot")
+mapa2 <- tm_shape(municipios_choco) +
+  tm_fill("etiqueta_ordenada", 
+          palette = "GnBu", 
+          title = "Municipios y distancias") +
+  tm_borders() +
+  tm_layout(title = "Municipios del Chocó con distancia a Quibdó",
+            legend.outside = TRUE,
+            legend.text.size = 2)
+
+tmap_arrange(mapa2)
+```
+
+El mapa muestra la distancia entre cada municipio del Chocó y la capital departamental, Quibdó, medida a través de los centroides municipales. Este análisis permite evaluar la accesibilidad territorial y la conectividad, aspectos clave para la provisión de servicios públicos y la integración regional. Los resultados indican que existe una gran dispersión geográfica, con municipios ubicados a más de 200 km de la capital (e.g., Acandí y Unguía), muchos de ellos en zonas costeras o fronterizas. Estas largas distancias, sumadas a la deficiente infraestructura vial del departamento, pueden implicar altos costos de transporte, dificultades logísticas y barrera de acceso a servicios básicos (educación, salud, justicia, etc.). Asimismo, esta variable puede estar relacionada indirectamente con los dos indicadores anteriores. Municipios más alejados tienden a presentar mayores niveles de pobreza y menores índices de desempeño fiscal, lo cual sugiere que la distancia territorial podría ser un factor estructural de exclusión y limitación en el acceso a oportunidades.
+
+\newpage
+
+# Interpretación general
+
+La lectura conjunta de los tres mapas permite evidenciar una relación estructural entre pobreza, desempeño fiscal y distancia geográfica. Los municipios más pobres suelen ser los más aislados y los que cuentan con menor capacidad administrativa para generar desarrollo local. Este análisis espacial resalta la necesidad de implementar políticas públicas territorialmente diferenciadas, que reconozcan las barreras físicas y estructurales que enfrentan las regiones apartadas como el Chocó.
+
+# Concluiones
+
+Mediante el uso de técnicas de análisis exploratorio de datos y representación cartográfica en R, las profundas desigualdades territoriales que caracterizan al departamento del Chocó. A través del estudio del Índice de Pobreza Multidimensional, el Índice de Desempeño Fiscal y las distancias geográficas hacia la capital Quibdó, se identificaron patrones espaciales que reflejan la concentración de la pobreza, la debilidad institucional y el aislamiento territorial en numerosos municipios. Los resultados revelan que los municipios más alejados de la capital tienden a presentar mayores niveles de pobreza y menor capacidad fiscal, lo cual sugiere una relación directa entre geografía, exclusión social y limitaciones administrativas. Esta situación pone de manifiesto la necesidad de diseñar políticas públicas diferenciadas, con enfoque territorial, que prioricen la inversión en infraestructura, fortalecimiento institucional y reducción de brechas sociales. En definitiva, los datos demuestran el valor del análisis estadístico geoespacial como herramienta fundamental para diagnosticar problemáticas regionales complejas y contribuir a la formulación de estrategias de desarrollo más equitativas y sostenibles.
+
+# Recomendación
+
+Se recomienda continuar y profundizar este tipo de análisis estadístico-geoespacial en futuras investigaciones, incorporando nuevas variables y métodos cuantitativos que permitan una comprensión más integral de las dinámicas territoriales en regiones con altos niveles de desigualdad como el Chocó. Los resultados obtenidos evidencian la necesidad de orientar las políticas públicas hacia un enfoque territorialmente diferenciado, priorizando a los municipios más aislados y vulnerables. Para ello, es fundamental fortalecer las capacidades institucionales locales, mejorar la conectividad regional y establecer sistemas de monitoreo permanente basados en datos actualizados y herramientas estadísticas replicables.
+
+\newpage
+
+# Biografía
+
+[Geoportal del Dane, para acceder a los polígonos](https://geoportal.dane.gov.co/servicios/descarga-y-metadatos/datos-geoestadisticos/)
+
+[Mapa del dane sobre pobreza y condiciones de vida](https://www.dane.gov.co/index.php/estadisticas-por-tema/pobreza-y-condiciones-de-vida)
+
+[Pagina de descarga de mapa interactivo](https://dane.maps.arcgis.com/home/item.html?id=bb63fb9c6bc84cbeb2399e77ff20f504)
+
+[IndiceDe Desempeño Fiscal(IDF)](https://www.dnp.gov.co/LaEntidad_/subdireccion-general-descentralizacion-desarrollo-territorial/direccion-descentralizacion-fortalecimiento-fiscal/Paginas/informacion-fiscal-y-financiera.aspx)
